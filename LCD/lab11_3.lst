@@ -1,0 +1,268 @@
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 1
+
+
+
+
+
+       MCS-51 Family Macro Assembler   A S E M - 5 1   V 1.3
+       =====================================================
+
+
+
+	Source File:	C:\Users\Dawid\Desktop\Technika mikroprocesorowa\2. Labki\Lab11\lab11_3.ASM
+	Object File:	C:\Users\Dawid\Desktop\Technika mikroprocesorowa\2. Labki\Lab11\lab11_3.hex
+	List File:	C:\Users\Dawid\Desktop\Technika mikroprocesorowa\2. Labki\Lab11\lab11_3.lst
+
+
+
+ Line  I  Addr  Code            Source
+
+    1:		D      0090		MAG SET P1		;zdefiniowanie symboli
+    2:		B      00B5		RS SET P3.5
+    3:		B      00B4		E SET P3.4
+    4:
+    5:	  0000	02 00 50		LJMP INIT		;skok do programu glownego
+    6:
+    7:		N      0023		ORG 0023H
+    8:	  0023	02 01 50		LJMP IRQUART		;skok do procedury obslugi przerwania od portu szeregowego
+    9:
+   10:		N      0050		ORG 50H
+   11:	  0050			INIT:
+   12:	  0050	75 98 50		MOV SCON,#01010000B	;konfiguracja portu szeregowego
+   13:	  0053	75 89 20		MOV TMOD,#00100000B	;licznik T1 w trybie 2 - 8bitowy z automatycznym przeladowaniem
+   14:	  0056	75 88 40		MOV TCON,#01000000B	;wlaczenie ukladu licznikowego T1
+   15:	  0059	75 A8 90		MOV IE,#10010000B	;wlaczenie przerwania od portu szeregowego
+   16:	  005C	7C 00			MOV R4,#0H		;inicjacja rejestru R4 - uzywany do zliczania aktualnej liczby znako
+				w
+   17:	  005E	7A 2A			MOV R2,#2AH		;inicjacja rejestru R2 - uzywany w procedurze opoznienia DELAY1
+   18:	  0060	90 04 FF		MOV DPTR,#4FFH		;inicjacja rejestru DPTR - uzywany w procedurze opoznienia DELAY2
+   19:	  0063	12 03 00		CALL INIT_LCD		;wywolanie procedury inicjalizujacej wyswietlacz LCD
+   20:	  0066	02 01 00		LJMP MAIN		;skok do poczatku programu
+   21:
+   22:		N      0100		ORG 100H
+   23:	  0100			MAIN:
+   24:	  0100	0A			INC R2			;program glowny
+   25:	  0101	02 01 00		LJMP MAIN
+   26:
+   27:		N      0150		ORG 150H
+   28:	  0150			IRQUART:			;precedura obslugi przerwania od portu szeregowego
+   29:	  0150	E5 99			MOV A,SBUF		;przepisanie do akumulatora kodu wprowadzonego znaku
+   30:	  0152	B4 03 03		CJNE A,#03H,STEP1	;jesli wcisniemy CTRL + C (kod ASCII 03H) to wywolujemy CLEAR
+   31:	  0155	12 04 5B		CALL CLEAR		;jesli nie to skaczemy do STEP1
+   32:	  0158			STEP1:
+   33:	  0158	BC 20 03		CJNE R4,#32D,STEP2	;sprawdzamy czy wyswietlacz zostal zapelniony (32 znaki)
+   34:	  015B	12 04 5B		CALL CLEAR		;jesli tak to wywolujemy CLEAR a jesli nie to do STEP2
+   35:	  015E			STEP2:
+   36:	  015E	BC 10 05		CJNE R4,#16D,WRITE	;sprawdzamy czy 1 linia zostala zapelniona (czy jest 16 znakow)
+   37:	  0161	74 40			MOV A,#40H		;jesli tak to wpisujemy do akumulatora adres DD RAM 2 linii 1 znaku
+   38:	  0163	12 04 00		CALL DDSET		;i wywolujemy procedure DDSET z tym argumentem
+   39:	  0166			WRITE:				;jesli pierwsza linia nie jest pelna to od razu przechodzimy do WRIT
+				E
+   40:	  0166	E5 99			MOV A,SBUF		;a jesli jest pelna to dopiero po wywolaniu DDSET
+   41:	  0168	F5 99			MOV SBUF, A		;we WRITE odsylamy wpisany znak do terminala
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
+
+
+
+ Line  I  Addr  Code            Source
+
+   42:	  016A	12 04 50		CALL DISPLAY		;wywolujemy procedure DISPLAY
+   43:	  016D	0C			INC R4			;inkrementujemy R4 - pojawil sie kolejny znak
+   44:	  016E	C2 99			CLR TI			;zerujemy znacznik przerwania nadajnika
+   45:	  0170	C2 98			CLR RI			;zerujemy znacznik przerwania odbiornika
+   46:	  0172	02 01 75		LJMP ENDIRQ		;skaczemy do konca procedury
+   47:	  0175			ENDIRQ:
+   48:	  0175	32			RETI
+   49:
+   50:		N      0300		ORG 300H
+   51:	  0300			INIT_LCD:
+   52:	  0300	C2 B5			CLR RS			;wybor rejestru instrukcji
+   53:	  0302	75 90 38		MOV MAG, #00111000B	;komenda function set
+   54:	  0305	12 03 50		CALL DELAY1		;wywolanie procedury opozniajacej aby instrukcje mialy czas sie wyko
+				nac
+   55:	  0308	75 90 08		MOV MAG, #00001000B	;komenda display off
+   56:	  030B	12 03 50		CALL DELAY1
+   57:	  030E	75 90 01		MOV MAG, #00000001B	;komenda display clear
+   58:	  0311	12 03 55		CALL DELAY2
+   59:	  0314	75 90 06		MOV MAG, #00000110B	;komenda entry mode set
+   60:	  0317	12 03 50		CALL DELAY1
+   61:	  031A	75 90 0F		MOV MAG, #00001111B	;komenda display on
+   62:	  031D	12 03 50		CALL DELAY1
+   63:	  0320	22			RET
+   64:
+   65:		N      0350		ORG 350H
+   66:	  0350			DELAY1:				;opoznienie 1 - dla komend o tmax 40us
+   67:	  0350	DA FE			DJNZ R2, DELAY1		;pusta petla dekrementujaca R2 do 0
+   68:	  0352	7A 2A			MOV R2, #2AH		;ponowne ustawienie R2
+   69:	  0354	22			RET
+   70:
+   71:	  0355			DELAY2: 			;opoznienie 2 - dla display clear gdzie tmax 1,64us
+   72:	  0355	D5 82 FD		DJNZ DPL, DELAY2	;pusta petla dekrementujaca DPTR do 0
+   73:	  0358			DELAY2_1:
+   74:	  0358	D5 83 FD		DJNZ DPH, DELAY2_1
+   75:	  035B	90 04 FF		MOV DPTR, #4FFH		;ponowne ustawienie DPTR
+   76:	  035E	22			RET
+   77:
+   78:		N      0400		ORG 400H
+   79:	  0400			DDSET:				;DD RAM set
+   80:	  0400	C2 B5			CLR RS			;wybor rejestru instrukcji
+   81:	  0402	F5 90			MOV MAG, A		;do magistrali danych (bity DB6 - DB0) wpisujemy adres DD RAM
+   82:	  0404	D2 97			SETB P1.7		;ustawiamy bit DB7 w celu wykonania instrukcji DD RAM set
+   83:	  0406	D2 B4			SETB E			;odblokowanie wyswietlacza zboczem opadajacym na linii E
+   84:	  0408	C2 B4			CLR E
+   85:	  040A	71 50			CALL DELAY1
+   86:	  040C	22			RET
+   87:
+   88:		N      0450		ORG 450H
+   89:	  0450			DISPLAY:			;procedura wypisujaca znaki na wyswietlaczu LCD
+   90:	  0450	D2 B5			SETB RS			;wybor rejestru danych
+   91:	  0452	F5 90			MOV MAG, A		;wpisanie do magistrali danych zawartosci akumulatora (kodu znaku)
+   92:	  0454	D2 B4			SETB E			;odblokowanie wyswietlacza zboczem opadajacym na linii E
+   93:	  0456	C2 B4			CLR E
+   94:	  0458	71 50			CALL DELAY1
+   95:	  045A	22			RET
+   96:
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
+
+
+
+ Line  I  Addr  Code            Source
+
+   97:	  045B			CLEAR:				;procedura czyszczaca zawartosc wyswietlacza LCD
+   98:	  045B	7C 00			MOV R4,#0H		;wpisujemy zero do R4
+   99:	  045D	74 00			MOV A,#0H		;wpisujemy nowy adres DD RAM do akumulatora - 1 linia, 1 znak
+  100:	  045F	91 00			CALL DDSET		;wywolujemy procedure DDSET
+  101:	  0461	C2 B5			CLR RS			;wybor rejestru instrukcji
+  102:	  0463	75 90 01		MOV MAG,#00000001B	;komenda Display clear
+  103:	  0466	D2 B4			SETB E			;odblokowanie wyswietlacza zboczem opadajacym na linii E
+  104:	  0468	C2 B4			CLR E
+  105:	  046A	71 55			CALL DELAY2
+  106:	  046C	22			RET
+  107:
+  108:	  046D			KONIEC:
+  109:	  046D	02 04 6D		LJMP KONIEC
+  110:				END
+  111:
+
+
+
+
+
+                     register banks used:  ---
+
+                     no errors
+
+
+
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
+
+
+
+
+
+	       L I S T   O F   S Y M B O L S
+	       =============================
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+??ASEM_51			  NUMBER    8051
+??VERSION			  NUMBER    0130
+AC				  BIT	      D6
+ACC				  DATA	      E0
+B				  DATA	      F0
+CLEAR				  CODE	    045B	  97
+CY				  BIT	      D7
+DDSET				  CODE	    0400	  79
+DELAY1				  CODE	    0350	  66
+DELAY2				  CODE	    0355	  71
+DELAY2_1			  CODE	    0358	  73
+DISPLAY				  CODE	    0450	  89
+DPH				  DATA	      83
+DPL				  DATA	      82
+E				  NUMBER    00B4	   3
+EA				  BIT	      AF
+ENDIRQ				  CODE	    0175	  47
+ES				  BIT	      AC
+ET0				  BIT	      A9
+ET1				  BIT	      AB
+EX0				  BIT	      A8
+EX1				  BIT	      AA
+EXTI0				  CODE	    0003
+EXTI1				  CODE	    0013
+F0				  BIT	      D5
+IE				  DATA	      A8
+IE0				  BIT	      89
+IE1				  BIT	      8B
+INIT				  CODE	    0050	  11
+INIT_LCD			  CODE	    0300	  51
+INT0				  BIT	      B2
+INT1				  BIT	      B3
+IP				  DATA	      B8
+IRQUART				  CODE	    0150	  28
+IT0				  BIT	      88
+IT1				  BIT	      8A
+KONIEC				  CODE	    046D	 108
+MAG				  NUMBER    0090	   1
+MAIN				  CODE	    0100	  23
+OV				  BIT	      D2
+P				  BIT	      D0
+P0				  DATA	      80
+P1				  DATA	      90
+P2				  DATA	      A0
+P3				  DATA	      B0
+PCON				  DATA	      87
+PS				  BIT	      BC
+PSW				  DATA	      D0
+PT0				  BIT	      B9
+PT1				  BIT	      BB
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 5
+
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+PX0				  BIT	      B8
+PX1				  BIT	      BA
+RB8				  BIT	      9A
+RD				  BIT	      B7
+REN				  BIT	      9C
+RESET				  CODE	    0000
+RI				  BIT	      98
+RS				  NUMBER    00B5	   2
+RS0				  BIT	      D3
+RS1				  BIT	      D4
+RXD				  BIT	      B0
+SBUF				  DATA	      99
+SCON				  DATA	      98
+SINT				  CODE	    0023
+SM0				  BIT	      9F
+SM1				  BIT	      9E
+SM2				  BIT	      9D
+SP				  DATA	      81
+STEP1				  CODE	    0158	  32
+STEP2				  CODE	    015E	  35
+T0				  BIT	      B4
+T1				  BIT	      B5
+TB8				  BIT	      9B
+TCON				  DATA	      88
+TF0				  BIT	      8D
+TF1				  BIT	      8F
+TH0				  DATA	      8C
+TH1				  DATA	      8D
+TI				  BIT	      99
+TIMER0				  CODE	    000B
+TIMER1				  CODE	    001B
+TL0				  DATA	      8A
+TL1				  DATA	      8B
+TMOD				  DATA	      89
+TR0				  BIT	      8C
+TR1				  BIT	      8E
+TXD				  BIT	      B1
+WR				  BIT	      B6
+WRITE				  CODE	    0166	  39

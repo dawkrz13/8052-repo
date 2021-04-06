@@ -1,0 +1,202 @@
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 1
+
+
+
+
+
+       MCS-51 Family Macro Assembler   A S E M - 5 1   V 1.3
+       =====================================================
+
+
+
+	Source File:	C:\Users\Dawid\Desktop\Technika mikroprocesorowa\2. Labki\Lab10\lab10_1comments.ASM
+	Object File:	C:\Users\Dawid\Desktop\Technika mikroprocesorowa\2. Labki\Lab10\lab10_1comments.hex
+	List File:	C:\Users\Dawid\Desktop\Technika mikroprocesorowa\2. Labki\Lab10\lab10_1comments.lst
+
+
+
+ Line  I  Addr  Code            Source
+
+    1:		N      00C8		T2CON SET 0C8H		;zdefiniowanie symboli
+    2:		N      00CB		RCAP2H SET 0CBH
+    3:		N      00CA		RCAP2L SET 0CAH
+    4:
+    5:	  0000	02 01 00		LJMP INIT		;skok do czesci inicjalizujacej
+    6:
+    7:		N      0023		ORG 0023H
+    8:	  0023	02 02 00		LJMP IRQUART		;skok do procedury obslugujacej przerwanie od portu szeregowego
+    9:
+   10:		N      0100		ORG 100H
+   11:	  0100			INIT:
+   12:	  0100	75 98 70		MOV SCON,#01110000B	;konfiguracja portu szeregowego
+   13:	  0103	85 37 C8		MOV T2CON, 00110111B	;konfiguracja licznika T2
+   14:	  0106	75 A8 90		MOV IE,#10010000B	;wlaczenie i konfiguracja kontrolera przerwan
+   15:	  0109	78 40			MOV R0,#40H		;inicjalizacja rejestrow R0 i R1 wartosciami 40H
+   16:	  010B	79 40			mov R1,#40H
+   17:	  010D	02 01 50		LJMP START
+   18:
+   19:		N      0150		ORG 150H
+   20:	  0150			START:
+   21:	  0150	0A			INC R2			;petla glowna
+   22:	  0151	02 01 50		LJMP START
+   23:
+   24:		N      0200		ORG 200H
+   25:	  0200			IRQUART:			;procedura obslugujaca przerwanie od portu szeregowego
+   26:	  0200	30 98 03		JNB RI,NXT		;jesli ustawiony jest znacznik RI to wywolujemy procedure odbiorcza
+   27:	  0203	12 02 50		CALL REC		;jesli nie to skaczemy do NXT i sprawdzamy znacznik TI
+   28:	  0206			NXT:
+   29:	  0206	30 99 03		JNB TI,IRQEND		;jesli ustawiony jest znacznik TI to wywolujemy procedure nadawcza
+   30:	  0209	12 03 00		CALL SEND		;jesli nie to skaczemy do IRQEND i konczymy procedure
+   31:	  020C			IRQEND:
+   32:	  020C	C2 99			CLR TI			;na koniec zawsze resetujemy znaczniki TI oraz RI
+   33:	  020E	C2 98			CLR RI
+   34:	  0210	32			RETI
+   35:
+   36:		N      0250		ORG 250H
+   37:	  0250			REC:				;procedura odbiorcza
+   38:	  0250	E5 99			MOV A,SBUF		;przepisujemy kod znaku do akumulatora
+   39:	  0252	F6			MOV @R0,A		;przepisujemy zawartosc akumulatora do komorki o adresie znajdujacym
+				 sie w R0
+   40:	  0253	08			INC R0			;inkrementujemy R0 zeby kolejny znak zostal wpisany do nastepnej kom
+				orki
+   41:	  0254	B8 50 05		CJNE R0,#50H,ENDREC	;jesli dotarlismy do komorki o adresie 50H to resetujemy R0 do warto
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
+
+
+
+ Line  I  Addr  Code            Source
+
+				sci
+   42:	  0257	78 40			MOV R0,#40H		;poczatkowej (zawijamy wektor) oraz wywolujemy procedure nadawcza
+   43:	  0259	12 03 00		CALL SEND		;jesli nie to konczymy procedure odbiorcza
+   44:	  025C			ENDREC:
+   45:	  025C	22			RET
+   46:
+   47:		N      0300		ORG 300H
+   48:	  0300			SEND:				;procedura nadawcza
+   49:	  0300	87 99			MOV SBUF,@R1		;wysylamy do terminala znak o kodzie zawartym w komorce o adresie zn
+				ajdujacym sie w R1
+   50:	  0302	09			INC R1			;inkrementujemy R1 zeby kolejny znak wyslany zostal z nastepnej komo
+				rki
+   51:	  0303	B9 50 FA		CJNE R1,#50H,SEND	;jesli dotarlismy do komorki o adresie 50H to resetujemy R1 do warto
+				sci
+   52:	  0306	79 40			MOV R1,#40H		;poczatkowej (zawijamy wektor) oraz resetujemy znacznik TI
+   53:	  0308	C2 99			CLR TI			;jesli nie to skaczemy do SEND i przepisujemy kolejny znak
+   54:	  030A	22			RET
+   55:
+   56:					END
+
+
+
+
+
+                     register banks used:  ---
+
+                     no errors
+
+
+
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
+
+
+
+
+
+	       L I S T   O F   S Y M B O L S
+	       =============================
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+??ASEM_51			  NUMBER    8051
+??VERSION			  NUMBER    0130
+AC				  BIT	      D6
+ACC				  DATA	      E0
+B				  DATA	      F0
+CY				  BIT	      D7
+DPH				  DATA	      83
+DPL				  DATA	      82
+EA				  BIT	      AF
+ENDREC				  CODE	    025C	  44
+ES				  BIT	      AC
+ET0				  BIT	      A9
+ET1				  BIT	      AB
+EX0				  BIT	      A8
+EX1				  BIT	      AA
+EXTI0				  CODE	    0003
+EXTI1				  CODE	    0013
+F0				  BIT	      D5
+IE				  DATA	      A8
+IE0				  BIT	      89
+IE1				  BIT	      8B
+INIT				  CODE	    0100	  11
+INT0				  BIT	      B2
+INT1				  BIT	      B3
+IP				  DATA	      B8
+IRQEND				  CODE	    020C	  31
+IRQUART				  CODE	    0200	  25
+IT0				  BIT	      88
+IT1				  BIT	      8A
+NXT				  CODE	    0206	  28
+OV				  BIT	      D2
+P				  BIT	      D0
+P0				  DATA	      80
+P1				  DATA	      90
+P2				  DATA	      A0
+P3				  DATA	      B0
+PCON				  DATA	      87
+PS				  BIT	      BC
+PSW				  DATA	      D0
+PT0				  BIT	      B9
+PT1				  BIT	      BB
+PX0				  BIT	      B8
+PX1				  BIT	      BA
+RB8				  BIT	      9A
+RCAP2H				  NUMBER    00CB	   2
+RCAP2L				  NUMBER    00CA	   3
+RD				  BIT	      B7
+REC				  CODE	    0250	  37
+REN				  BIT	      9C
+RESET				  CODE	    0000
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
+
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+RI				  BIT	      98
+RS0				  BIT	      D3
+RS1				  BIT	      D4
+RXD				  BIT	      B0
+SBUF				  DATA	      99
+SCON				  DATA	      98
+SEND				  CODE	    0300	  48
+SINT				  CODE	    0023
+SM0				  BIT	      9F
+SM1				  BIT	      9E
+SM2				  BIT	      9D
+SP				  DATA	      81
+START				  CODE	    0150	  20
+T0				  BIT	      B4
+T1				  BIT	      B5
+T2CON				  NUMBER    00C8	   1
+TB8				  BIT	      9B
+TCON				  DATA	      88
+TF0				  BIT	      8D
+TF1				  BIT	      8F
+TH0				  DATA	      8C
+TH1				  DATA	      8D
+TI				  BIT	      99
+TIMER0				  CODE	    000B
+TIMER1				  CODE	    001B
+TL0				  DATA	      8A
+TL1				  DATA	      8B
+TMOD				  DATA	      89
+TR0				  BIT	      8C
+TR1				  BIT	      8E
+TXD				  BIT	      B1
+WR				  BIT	      B6
